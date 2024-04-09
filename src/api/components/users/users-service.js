@@ -1,5 +1,6 @@
 const usersRepository = require('./users-repository');
 const { hashPassword } = require('../../../utils/password');
+const { passwordMatched } = require('../../../utils/password');
 
 /**
  * Get list of users
@@ -107,9 +108,68 @@ async function deleteUser(id) {
   return true;
 }
 
+/**
+ * Get user email
+ * @param {string} email - User email
+ * @returns {Object}
+ */
+async function getCheckEmail(email) {
+  const checkEmail = await usersRepository.getEmail(email);
+
+  // Email
+  if (!checkEmail) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Get user password
+ * @param {string} password - User password
+ * @returns {Object}
+ */
+async function getCheckPassword(password) {
+  const checkPassword = await usersRepository.getPassword(password);
+
+  // Password
+  if (checkPassword) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// PasswordNew
+async function getChangePassword(
+  id,
+  password_old,
+  password_new,
+  password_confirm
+) {
+  //
+  if (password_confirm != password_new) {
+    throw new Error('Invalid New Password');
+  }
+
+  // Compare
+  const getUserId = await usersRepository.getUser(id);
+  const comparePass = await passwordMatched(password_old, getUserId.password);
+
+  if (!comparePass) {
+    throw new Error('Wrong Password');
+  }
+
+  const hashedPassword = await hashPassword(password_new);
+  await usersRepository.getPasswordNew(id, hashedPassword);
+}
+
 module.exports = {
   getUsers,
   getUser,
+  getCheckEmail,
+  getCheckPassword,
+  getChangePassword,
   createUser,
   updateUser,
   deleteUser,
